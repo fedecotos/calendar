@@ -48,14 +48,17 @@ main{padding:34px 44px}
 .wbf{height:100%;border-radius:1px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 .dc{border-right:1px solid var(--border);padding:9px 9px;cursor:pointer;transition:background .12s;min-height:90px;display:flex;flex-direction:column;gap:2px}
 .dc:last-child{border-right:none}
-.dc:hover:not(.grey){background:#faf9f7}
+.dc:hover{background:#faf9f7}
 .dn{font-size:12px;font-weight:600;line-height:1;margin-bottom:2px}
 .om .dn{color:var(--muted);opacity:.28}
 .td .dn{background:var(--orange);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
 .dh2{font:10px/1 'DM Mono',monospace;color:var(--muted)}
 .chip{font:10px/1 'DM Mono',monospace;padding:2px 6px;border-radius:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;max-width:100%;transition:opacity .12s}
 .chip:hover{opacity:.65}
-.grey{background:repeating-linear-gradient(-45deg,#f0efed,#f0efed 3px,#e8e7e5 3px,#e8e7e5 9px)!important;cursor:not-allowed;opacity:.5;pointer-events:none}
+/* GREYED OUT: keeps pointer events so you can still edit */
+.grey{background:repeating-linear-gradient(-45deg,#f0efed,#f0efed 3px,#e8e7e5 3px,#e8e7e5 9px)!important;opacity:.65}
+/* Weekends still blocked */
+.wknd{background:repeating-linear-gradient(-45deg,#f0efed,#f0efed 3px,#e8e7e5 3px,#e8e7e5 9px)!important;cursor:not-allowed;opacity:.45;pointer-events:none}
 .overlay{display:none;position:fixed;inset:0;background:rgba(26,25,23,.55);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
 .overlay.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border);width:440px;max-width:95vw;animation:up .18s ease;box-shadow:0 20px 60px rgba(0,0,0,.13)}
@@ -95,10 +98,10 @@ main{padding:34px 44px}
     <button class="btn" id="tb">Today</button>
   </div>
   <div class="legend">
-    <div class="li"><div class="ld" style="background:var(--green)"></div>&lt;800h — Available</div>
-    <div class="li"><div class="ld" style="background:var(--orange)"></div>800–1100h — Getting Full</div>
-    <div class="li"><div class="ld" style="background:var(--red)"></div>&gt;1100h — Few Hours Left</div>
-    <div class="li"><div class="ld" style="background:var(--grey)"></div>1200h — Limit Reached</div>
+    <div class="li"><div class="ld" style="background:var(--green)"></div>&gt;400h remaining</div>
+    <div class="li"><div class="ld" style="background:var(--orange)"></div>100–400h remaining</div>
+    <div class="li"><div class="ld" style="background:var(--red)"></div>&lt;100h remaining</div>
+    <div class="li"><div class="ld" style="background:var(--grey)"></div>0h — Limit Reached</div>
   </div>
 </nav>
 <main>
@@ -133,58 +136,107 @@ main{padding:34px 44px}
   <div class="ci del" id="cd" style="display:none">Remove Entry</div>
 </div>
 <script>
-const LIM=1200,DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+const LIM=1200,
+DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
 MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'],
 RC={AMER:{bg:'rgba(232,96,28,.10)',t:'#b84d0e',b:'rgba(232,96,28,.28)'},EMEA:{bg:'rgba(45,122,79,.10)',t:'#1d6040',b:'rgba(45,122,79,.28)'},APAC:{bg:'rgba(58,130,185,.10)',t:'#2a6080',b:'rgba(58,130,185,.28)'},LATAM:{bg:'rgba(130,80,200,.10)',t:'#5a3598',b:'rgba(130,80,200,.28)'},Global:{bg:'rgba(80,80,80,.08)',t:'#444',b:'rgba(80,80,80,.22)'}};
-let yr,mo,entries=JSON.parse(localStorage.getItem('pto_g3')||'null')||[],pD=null,pI=null;
-const save=()=>localStorage.setItem('pto_g3',JSON.stringify(entries));
+
+let yr,mo,entries=JSON.parse(localStorage.getItem('pto_g4')||'null')||[],pD=null,pI=null;
+const save=()=>localStorage.setItem('pto_g4',JSON.stringify(entries));
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const pd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const wS=d=>{const c=new Date(d);c.setDate(c.getDate()-c.getDay());return c};
 const iwk=d=>{const j=new Date(d.getFullYear(),0,1);return Math.ceil(((d-j)/86400000+j.getDay()+1)/7)};
-function hoursOn(s){let h=0;const c=pd(s);if(c.getDay()===0||c.getDay()===6)return 0;for(const e of entries){const es=pd(e.s),ee=pd(e.e);if(c>=es&&c<=ee)h+=Number(e.h)}return h}
+
+function hoursOn(s){
+  let h=0;const c=pd(s);
+  if(c.getDay()===0||c.getDay()===6)return 0;
+  for(const e of entries){const es=pd(e.s),ee=pd(e.e);if(c>=es&&c<=ee)h+=Number(e.h)}
+  return h;
+}
 function wH(ws){let h=0;for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(d.getDate()+i);h+=hoursOn(ds(d))}return h}
 function eOn(s){const c=pd(s);return entries.filter(e=>c>=pd(e.s)&&c<=pd(e.e))}
-const col=u=>u>=LIM?'var(--grey)':u>=1100?'var(--red)':u>=800?'var(--orange)':'var(--green)';
-const lbl=u=>u>=LIM?'LIMIT REACHED':u>=1100?'FEW HOURS LEFT':u>=800?'GETTING FULL':'AVAILABLE';
-function getWeeks(){const first=new Date(yr,mo,1),last=new Date(yr,mo+1,0),start=wS(first),weeks=[];let cur=new Date(start);while(true){const days=[];for(let i=0;i<7;i++){days.push(new Date(cur));cur.setDate(cur.getDate()+1)}weeks.push(days);if(cur>last&&weeks.length>=4)break}return weeks}
+
+// Color based on REMAINING hours
+const col=rem=>rem<=0?'var(--grey)':rem<100?'var(--red)':rem<400?'var(--orange)':'var(--green)';
+const lbl=rem=>rem<=0?'LIMIT REACHED':rem<100?'FEW HOURS LEFT':rem<400?'GETTING FULL':'AVAILABLE';
+
+function getWeeks(){
+  const first=new Date(yr,mo,1),last=new Date(yr,mo+1,0),start=wS(first),weeks=[];
+  let cur=new Date(start);
+  while(true){
+    const days=[];
+    for(let i=0;i<7;i++){days.push(new Date(cur));cur.setDate(cur.getDate()+1)}
+    weeks.push(days);
+    if(cur>last&&weeks.length>=4)break;
+  }
+  return weeks;
+}
+
 function render(){
   const weeks=getWeeks(),today=ds(new Date());
   document.getElementById('hm').innerHTML=`Weekly Limit: ${LIM.toLocaleString()} hours<br>${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`;
   document.getElementById('ml').textContent=MONTHS[mo]+' '+yr;
   document.getElementById('dh').innerHTML=`<div class="dhc">Week</div>`+DAYS.map(d=>`<div class="dhc">${d}</div>`).join('');
+
   const wh=weeks.map(w=>wH(w[0]));
-  const avg=Math.round(wh.reduce((a,b)=>a+b,0)/weeks.length);
+  const wrem=wh.map(u=>Math.max(0,LIM-u));
+  const avgRem=Math.round(wrem.reduce((a,b)=>a+b,0)/weeks.length);
+  const avgUsed=Math.round(wh.reduce((a,b)=>a+b,0)/weeks.length);
   const capped=wh.filter(h=>h>=LIM).length;
-  const maxH=Math.max(...wh,0);
-  const rem=Math.max(0,LIM-avg);
+  const minRem=Math.min(...wrem);
+
   document.getElementById('st').innerHTML=`
     <div class="sc"><div class="sl">PTO Entries</div><div class="sv">${entries.length}</div><div class="ss">${weeks.length} weeks visible</div></div>
-    <div class="sc"><div class="sl">Avg Hours / Week</div><div class="sv ${avg>=1100?'r':avg>=800?'o':'g'}">${avg.toLocaleString()}<span>h</span></div><div class="ss">of ${LIM.toLocaleString()}h limit</div></div>
-    <div class="sc"><div class="sl">Avg Remaining / Week</div><div class="sv">${rem.toLocaleString()}<span>h</span></div><div class="ss">available capacity</div></div>
-    <div class="sc"><div class="sl">Weeks at Capacity</div><div class="sv ${capped>0?'r':'g'}">${capped}</div><div class="ss">peak: ${maxH.toLocaleString()}h this month</div></div>`;
+    <div class="sc"><div class="sl">Avg Remaining / Week</div><div class="sv ${avgRem<100?'r':avgRem<400?'o':'g'}">${avgRem.toLocaleString()}<span>h</span></div><div class="ss">of ${LIM.toLocaleString()}h limit</div></div>
+    <div class="sc"><div class="sl">Avg Hours Used / Week</div><div class="sv">${avgUsed.toLocaleString()}<span>h</span></div><div class="ss">booked so far</div></div>
+    <div class="sc"><div class="sl">Weeks at Capacity</div><div class="sv ${capped>0?'r':'g'}">${capped}</div><div class="ss">tightest: ${minRem.toLocaleString()}h left</div></div>`;
+
   let html='';
   weeks.forEach((days,wi)=>{
-    const used=wh[wi],pct=Math.min(100,used/LIM*100),c=col(used),greyed=used>=LIM,wn=iwk(days[1]||days[0]);
-    html+=`<div class="wr"><div class="wstripe" style="background:${c}"></div><div class="wl"><div class="wn">WK ${wn}</div><div><div class="wh" style="color:${c}">${used.toLocaleString()}<span>h</span></div><div class="ws2">${lbl(used)}</div><div class="wbw"><div class="wbf" style="width:${pct}%;background:${c}"></div></div></div></div>`;
+    const used=wh[wi],rem=wrem[wi],pct=Math.min(100,used/LIM*100),c=col(rem),greyed=used>=LIM,wn=iwk(days[1]||days[0]);
+    // Progress bar drains: full bar at 0 used, empty at LIM used — show remaining visually
+    const remPct=Math.max(0,100-pct);
+
+    html+=`<div class="wr">
+      <div class="wstripe" style="background:${c}"></div>
+      <div class="wl">
+        <div class="wn">WK ${wn}</div>
+        <div>
+          <div class="wh" style="color:${c}">${rem.toLocaleString()}<span>h left</span></div>
+          <div class="ws2">${lbl(rem)}</div>
+          <div class="wbw"><div class="wbf" style="width:${remPct}%;background:${c}"></div></div>
+        </div>
+      </div>`;
+
     days.forEach(d=>{
       const dStr=ds(d),otherM=d.getMonth()!==mo,isToday=dStr===today,de=eOn(dStr),dh=de.reduce((a,e)=>a+Number(e.h),0),dow=d.getDay(),wknd=dow===0||dow===6;
-      let cls='dc';if(greyed||wknd)cls+=' grey';if(otherM)cls+=' om';if(isToday)cls+=' td';
+      // Greyed = capped weeks, but still clickable (no pointer-events:none)
+      // Weekends = fully blocked
+      let cls='dc';
+      if(greyed)cls+=' grey';
+      if(wknd)cls+=' wknd';
+      if(otherM)cls+=' om';
+      if(isToday)cls+=' td';
+
       html+=`<div class="${cls}" data-date="${dStr}"><div class="dn">${d.getDate()}</div>`;
-      if(dh>0)html+=`<div class="dh2">${dh}h</div>`;
+      if(dh>0)html+=`<div class="dh2">${dh}h booked</div>`;
       de.forEach(e=>{const rc=RC[e.r]||RC.Global;html+=`<div class="chip" data-id="${e.id}" style="background:${rc.bg};color:${rc.t};border-color:${rc.b}" title="${e.n} · ${e.h}h/day · ${e.r}">${e.n.split(' ')[0]}</div>`});
       html+=`</div>`;
     });
     html+=`</div>`;
   });
+
   document.getElementById('cb').innerHTML=html;
-  document.querySelectorAll('.dc:not(.grey)').forEach(cell=>{
+
+  document.querySelectorAll('.dc:not(.wknd)').forEach(cell=>{
     cell.addEventListener('click',ev=>{if(ev.target.closest('.chip'))return;openModal(cell.dataset.date)});
   });
   document.querySelectorAll('.chip').forEach(chip=>{
     chip.addEventListener('click',ev=>{ev.stopPropagation();showCtx(ev,null,chip.dataset.id)});
   });
 }
+
 function openModal(date){
   pD=date;pI=null;
   document.getElementById('fsd').value=date;
@@ -194,22 +246,26 @@ function openModal(date){
   document.getElementById('frd').value='AMER';
   const ws=wS(pd(date)),used=wH(ws),rem=LIM-used,wb=document.getElementById('wb');
   wb.className='warn';
-  if(rem<=0){wb.style.display='block';wb.classList.add('d');wb.textContent=`LIMIT REACHED — ${used.toLocaleString()}/${LIM.toLocaleString()} hours used this week`}
-  else if(rem<=200){wb.style.display='block';wb.textContent=`Only ${rem.toLocaleString()} hours remaining this week (${used.toLocaleString()}h used)`}
+  if(rem<=0){wb.style.display='block';wb.classList.add('d');wb.textContent=`LIMIT REACHED — 0 hours remaining this week (${used.toLocaleString()}h booked)`}
+  else if(rem<100){wb.style.display='block';wb.classList.add('d');wb.textContent=`Only ${rem.toLocaleString()} hours remaining this week`}
+  else if(rem<400){wb.style.display='block';wb.textContent=`${rem.toLocaleString()} hours remaining this week — getting full`}
   else wb.style.display='none';
   document.getElementById('ov').classList.add('open');
   setTimeout(()=>document.getElementById('fn').focus(),80);
 }
+
 const closeModal=()=>{document.getElementById('ov').classList.remove('open');pD=pI=null};
 document.getElementById('mc').addEventListener('click',closeModal);
 document.getElementById('mca').addEventListener('click',closeModal);
 document.getElementById('ov').addEventListener('click',ev=>{if(ev.target===document.getElementById('ov'))closeModal()});
+
 document.getElementById('msv').addEventListener('click',()=>{
   const n=document.getElementById('fn').value.trim(),s=document.getElementById('fsd').value,e=document.getElementById('fed').value,h=parseFloat(document.getElementById('fhd').value),r=document.getElementById('frd').value;
   if(!n||!s||!e||isNaN(h)){alert('Please complete all fields.');return}
   if(e<s){alert('End date must be on or after start date.');return}
   entries.push({id:Date.now().toString(),n,s,e,h,r});save();closeModal();render();
 });
+
 function showCtx(ev,date,chipId){
   ev.stopPropagation();const menu=document.getElementById('ctx');
   pD=date;pI=chipId;
@@ -225,6 +281,7 @@ document.addEventListener('click',()=>document.getElementById('ctx').classList.r
 document.getElementById('pb').addEventListener('click',()=>{mo--;if(mo<0){mo=11;yr--}render()});
 document.getElementById('nb').addEventListener('click',()=>{mo++;if(mo>11){mo=0;yr++}render()});
 document.getElementById('tb').addEventListener('click',()=>{const n=new Date();yr=n.getFullYear();mo=n.getMonth();render()});
+
 function seed(){
   const y=new Date().getFullYear(),m=String(new Date().getMonth()+1).padStart(2,'0');
   entries=[
