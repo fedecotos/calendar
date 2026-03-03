@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTO Allocation — Global</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f2;--surface:#fff;--s2:#f0efed;--border:#e2e0dd;
+  --text:#1a1917;--muted:#8a8784;--orange:#e8601c;--green:#2d7a4f;
+  --red:#c0392b;--grey:#c8c7c5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── HEADER ── */
+header{background:var(--text);color:var(--bg);padding:26px 44px;display:flex;align-items:center;justify-content:space-between}
+.logo{font:11px/1 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.38}
+header h1{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.hmeta{font:11px/1.7 'DM Mono',monospace;opacity:.35;text-align:right}
+
+/* ── NAV ── */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 44px;display:flex;align-items:center;justify-content:space-between;height:54px}
+.nav-l{display:flex;align-items:center;gap:8px}
+.btn{font:500 13px/1 'Syne',sans-serif;border:1px solid var(--border);background:transparent;color:var(--text);padding:7px 15px;cursor:pointer;transition:.13s}
+.btn:hover{background:var(--s2)}
+.btn-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;padding:0;font-size:15px}
+.btn-primary{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:600}
+.btn-primary:hover{background:#c94d0e;border-color:#c94d0e}
+.mlabel{font-size:17px;font-weight:600;letter-spacing:-.02em;min-width:175px;text-align:center}
+.legend{display:flex;align-items:center;gap:16px;font:11px/1 'DM Mono',monospace;color:var(--muted)}
+.li{display:flex;align-items:center;gap:6px}
+.ld{width:9px;height:9px;border-radius:50%}
+
+/* ── MAIN ── */
+main{padding:34px 44px}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:26px}
+.sc{background:var(--surface);padding:20px 24px}
+.sl{font:10px/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.sv{font-size:30px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.sv span{font-size:14px;font-weight:400;opacity:.5}
+.sv.o{color:var(--orange)}.sv.g{color:var(--green)}.sv.r{color:var(--red)}
+.ss{font:10px/1 'DM Mono',monospace;color:var(--muted);margin-top:5px}
+
+/* ── CALENDAR ── */
+.cal{border:1px solid var(--border);background:var(--surface);overflow:hidden}
+.dh{display:grid;grid-template-columns:140px repeat(7,1fr);border-bottom:2px solid var(--border);background:var(--s2)}
+.dhc{padding:11px 13px;font:10px/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-right:1px solid var(--border);text-align:center}
+.dhc:first-child{text-align:left}.dhc:last-child{border-right:none}
+
+/* ── WEEK ROW ── */
+.wr{display:grid;grid-template-columns:140px repeat(7,1fr);border-bottom:1px solid var(--border);min-height:92px;position:relative}
+.wr:last-child{border-bottom:none}
+.wstripe{position:absolute;top:0;left:0;width:3px;bottom:0}
+
+/* ── WEEK LABEL ── */
+.wl{padding:12px 12px 12px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between}
+.wn{font:10px/1 'DM Mono',monospace;color:var(--muted);letter-spacing:.07em}
+.wlim{font:9px/1 'DM Mono',monospace;color:var(--muted);opacity:.6;margin-top:2px}
+.wh{font:500 15px/1 'DM Mono',monospace}
+.wh span{font-size:10px;opacity:.5}
+.ws2{font:9px/1 'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.wbw{height:2px;background:var(--border);border-radius:1px;margin-top:7px;overflow:hidden}
+.wbf{height:100%;border-radius:1px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ── DAY CELL ── */
+.dc{border-right:1px solid var(--border);padding:9px 9px;cursor:pointer;transition:background .12s;min-height:92px;display:flex;flex-direction:column;gap:2px}
+.dc:last-child{border-right:none}
+.dc:hover{background:#faf9f7}
+.dn{font-size:12px;font-weight:600;line-height:1;margin-bottom:2px}
+.om .dn{color:var(--muted);opacity:.25}
+.td .dn{background:var(--orange);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.dh2{font:10px/1 'DM Mono',monospace;color:var(--muted)}
+
+/* ── CHIPS ── */
+.chip{font:10px/1 'DM Mono',monospace;padding:2px 6px;border-radius:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;max-width:100%;transition:opacity .12s}
+.chip:hover{opacity:.65}
+
+/* ── STATES ── */
+/* Capped weeks: hatched but STILL clickable */
+.grey{background:repeating-linear-gradient(-45deg,#f0efed,#f0efed 3px,#e8e7e5 3px,#e8e7e5 9px)!important;opacity:.7}
+/* Weekends: blocked */
+.wknd{background:repeating-linear-gradient(-45deg,#f5f4f2,#f5f4f2 3px,#eeece9 3px,#eeece9 9px)!important;cursor:not-allowed;opacity:.4;pointer-events:none}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(26,25,23,.55);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);width:440px;max-width:95vw;animation:up .18s ease;box-shadow:0 20px 60px rgba(0,0,0,.13)}
+@keyframes up{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mh{background:var(--text);color:var(--bg);padding:17px 21px;display:flex;justify-content:space-between;align-items:center}
+.mh span{font-size:14px;font-weight:600}
+.mx{background:none;border:none;color:var(--bg);cursor:pointer;font-size:20px;opacity:.4;line-height:1;transition:opacity .12s}
+.mx:hover{opacity:1}
+.mb{padding:21px}
+.mf{padding:13px 21px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.fg{margin-bottom:15px}
+.fl{display:block;font:10px/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.fi,.fs{width:100%;font:13px/1 'Syne',sans-serif;border:1px solid var(--border);background:var(--bg);color:var(--text);padding:9px 11px;outline:none;transition:border-color .13s;-webkit-appearance:none}
+.fi:focus,.fs:focus{border-color:var(--orange)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.warn{font:11px/1.5 'DM Mono',monospace;padding:9px 12px;margin-bottom:13px;border-left:3px solid var(--orange);background:rgba(232,96,28,.07);color:var(--orange)}
+.warn.d{border-color:var(--red);background:rgba(192,57,43,.07);color:var(--red)}
+
+/* ── SETTINGS BAR ── */
+.settings-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 44px;display:flex;align-items:center;gap:24px;height:50px}
+.settings-label{font:10px/1 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.settings-input{font:500 13px/1 'DM Mono',monospace;border:1px solid var(--border);background:var(--bg);color:var(--text);padding:6px 10px;width:110px;outline:none;transition:border-color .13s;-webkit-appearance:none}
+.settings-input:focus{border-color:var(--orange)}
+.settings-hint{font:10px/1 'DM Mono',monospace;color:var(--muted);opacity:.6}
+.settings-divider{width:1px;height:20px;background:var(--border)}
+
+/* ── PER-WEEK LIMIT INPUT ── */
+.wlim-input{font:9px/1 'DM Mono',monospace;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--muted);width:72px;outline:none;padding:1px 2px;transition:border-color .13s;-webkit-appearance:none}
+.wlim-input:focus{border-color:var(--orange);color:var(--text)}
+
+/* ── CONTEXT MENU ── */
+.ctx{display:none;position:fixed;z-index:200;background:var(--surface);border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.1);min-width:160px}
+.ctx.open{display:block}
+.ci{padding:10px 15px;font:12px/1 'DM Mono',monospace;cursor:pointer;transition:background .1s}
+.ci:hover{background:var(--s2)}
+.ci.del{color:var(--red)}
+
+@media(max-width:1000px){
+  header,nav,main{padding-left:16px;padding-right:16px}
+  .settings-bar{padding-left:16px;padding-right:16px;flex-wrap:wrap;height:auto;padding-top:10px;padding-bottom:10px;gap:12px}
+  .stats{grid-template-columns:1fr 1fr}
+  .legend{display:none}
+  .dh,.wr{grid-template-columns:85px repeat(7,1fr)}
+  .wl{padding:8px 8px 8px 11px}
+  .dc{padding:6px 5px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PTO / Global</div>
+  <h1>Global PTO Allocation</h1>
+  <div class="hmeta" id="hm">—</div>
+</header>
+
+<nav>
+  <div class="nav-l">
+    <button class="btn btn-icon" id="pb">&#8592;</button>
+    <div class="mlabel" id="ml">—</div>
+    <button class="btn btn-icon" id="nb">&#8594;</button>
+    <button class="btn" id="tb">Today</button>
+  </div>
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:var(--green)"></div>&gt;400h remaining</div>
+    <div class="li"><div class="ld" style="background:var(--orange)"></div>100–400h remaining</div>
+    <div class="li"><div class="ld" style="background:var(--red)"></div>&lt;100h remaining</div>
+    <div class="li"><div class="ld" style="background:var(--grey)"></div>0h — Limit Reached</div>
+  </div>
+</nav>
+
+<!-- Settings bar -->
+<div class="settings-bar">
+  <span class="settings-label">Default Weekly Limit</span>
+  <input class="settings-input" type="number" id="globalLimit" value="1200" min="1" step="10" placeholder="1200">
+  <span class="settings-hint">hours &nbsp;(applies to all weeks unless overridden)</span>
+  <div class="settings-divider"></div>
+  <span class="settings-hint">↙ click any week's limit to override it individually</span>
+</div>
+  <div class="stats" id="st"></div>
+  <div class="cal">
+    <div class="dh" id="dh"></div>
+    <div id="cb"></div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div class="overlay" id="ov">
+  <div class="modal">
+    <div class="mh"><span>Add PTO Entry</span><button class="mx" id="mc">&times;</button></div>
+    <div class="mb">
+      <div id="wb" class="warn" style="display:none"></div>
+      <div class="fg"><label class="fl">Employee Name</label><input class="fi" id="fn" type="text" placeholder="e.g. Sarah Johnson"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Start Date</label><input class="fi" id="fsd" type="date"></div>
+        <div class="fg"><label class="fl">End Date</label><input class="fi" id="fed" type="date"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Hours / Day</label><input class="fi" id="fhd" type="number" value="8" min="1" max="24" step="0.5"></div>
+        <div class="fg"><label class="fl">Region</label>
+          <select class="fs" id="frd">
+            <option value="NORAM">North America</option>
+            <option value="LATAM">LATAM</option>
+            <option value="INDIA">India</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" id="mca">Cancel</button>
+      <button class="btn btn-primary" id="msv">Add Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div class="ctx" id="ctx">
+  <div class="ci" id="ca">+ Add PTO Here</div>
+  <div class="ci del" id="cd" style="display:none">Remove Entry</div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const DAILY_MAX = 240;   // max hours per workday
+
+// Region colours
+const RC = {
+  NORAM: { bg:'rgba(232,96,28,.10)',  t:'#b84d0e', b:'rgba(232,96,28,.28)' },
+  LATAM: { bg:'rgba(130,80,200,.10)', t:'#5a3598', b:'rgba(130,80,200,.28)' },
+  INDIA: { bg:'rgba(45,122,79,.10)',  t:'#1d6040', b:'rgba(45,122,79,.28)' },
+};
+
+const REGION_LABELS = { NORAM:'North America', LATAM:'LATAM', INDIA:'India' };
+
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July',
+                'August','September','October','November','December'];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let yr, mo;
+let entries       = JSON.parse(localStorage.getItem('pto_g5') || 'null') || [];
+// weekOverrides: { "YYYY-Www": customHourLimit }
+let weekOverrides = JSON.parse(localStorage.getItem('pto_ov') || '{}');
+let pD = null, pI = null;
+
+const save   = () => localStorage.setItem('pto_g5', JSON.stringify(entries));
+const saveOv = () => localStorage.setItem('pto_ov', JSON.stringify(weekOverrides));
+
+// Read the global limit input live
+const getGlobalLimit = () => {
+  const v = parseFloat(document.getElementById('globalLimit')?.value);
+  return (!isNaN(v) && v > 0) ? v : 1200;
+};
+
+// Unique key per week: "2026-W10"
+const weekKey = days => {
+  const d = days[1] || days[0];
+  return d.getFullYear() + '-W' + String(iwk(d)).padStart(2,'0');
+};
+
+// ─── DATE HELPERS ─────────────────────────────────────────────────────────────
+const ds  = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const pd  = s => { const[y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const wS  = d => { const c=new Date(d); c.setDate(c.getDate()-c.getDay()); return c; };
+const iwk = d => { const j=new Date(d.getFullYear(),0,1); return Math.ceil(((d-j)/86400000+j.getDay()+1)/7); };
+const isWknd = d => d.getDay()===0 || d.getDay()===6;
+
+/**
+ * Count workdays (Mon–Fri) in a week array that belong to the current display month.
+ * A "partial" week at month boundaries only counts the days visible in this month.
+ */
+function workdaysInWeek(weekDays) {
+  return weekDays.filter(d => !isWknd(d) && d.getMonth() === mo).length;
+}
+
+/**
+ * Effective limit for a week:
+ * 1. If a per-week override exists → use that value exactly
+ * 2. Otherwise: pro-rate the global limit by workdays in this month
+ *    (full 5-day week gets 100% of global limit; 2-day week gets 2/5)
+ */
+function weekLimit(weekDays) {
+  const key = weekKey(weekDays);
+  if (weekOverrides[key] !== undefined) return weekOverrides[key];
+  const wd = workdaysInWeek(weekDays);
+  const globalLimit = getGlobalLimit();
+  // Pro-rate: partial weeks scale proportionally
+  return Math.round((wd / 5) * globalLimit);
+}
+
+// ─── HOURS CALCULATION ────────────────────────────────────────────────────────
+function hoursOn(dStr) {
+  let h = 0;
+  const c = pd(dStr);
+  if (isWknd(c)) return 0;
+  for (const e of entries) {
+    const es = pd(e.s), ee = pd(e.e);
+    if (c >= es && c <= ee) h += Number(e.h);
+  }
+  return h;
+}
+
+function wH(weekDays) {
+  let h = 0;
+  for (const d of weekDays) h += hoursOn(ds(d));
+  return h;
+}
+
+function eOn(dStr) {
+  const c = pd(dStr);
+  return entries.filter(e => c >= pd(e.s) && c <= pd(e.e));
+}
+
+// ─── STATUS COLOURS (based on remaining hours) ────────────────────────────────
+const col = rem => rem <= 0 ? 'var(--grey)' : rem < 100 ? 'var(--red)' : rem < 400 ? 'var(--orange)' : 'var(--green)';
+const lbl = rem => rem <= 0 ? 'LIMIT REACHED' : rem < 100 ? 'FEW HOURS LEFT' : rem < 400 ? 'GETTING FULL' : 'AVAILABLE';
+
+// ─── WEEK BUILDING ────────────────────────────────────────────────────────────
+function getWeeks() {
+  const first = new Date(yr, mo, 1);
+  const last  = new Date(yr, mo+1, 0);
+  const start = wS(first);
+  const weeks = [];
+  let cur = new Date(start);
+  while (true) {
+    const days = [];
+    for (let i = 0; i < 7; i++) { days.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+    weeks.push(days);
+    if (cur > last && weeks.length >= 4) break;
+  }
+  return weeks;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  const weeks = getWeeks();
+  const today = ds(new Date());
+
+  document.getElementById('hm').innerHTML =
+    `Daily Max: ${DAILY_MAX.toLocaleString()}h &nbsp;|&nbsp; Default Limit: ${getGlobalLimit().toLocaleString()}h<br>` +
+    new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  document.getElementById('ml').textContent = MONTHS[mo]+' '+yr;
+  document.getElementById('dh').innerHTML =
+    `<div class="dhc">Week</div>` + DAYS.map(d=>`<div class="dhc">${d}</div>`).join('');
+
+  // Per-week metrics
+  const limits = weeks.map(w => weekLimit(w));
+  const used   = weeks.map(w => wH(w));
+  const rems   = weeks.map((w,i) => Math.max(0, limits[i] - used[i]));
+
+  const avgRem  = Math.round(rems.reduce((a,b)=>a+b,0) / weeks.length);
+  const avgUsed = Math.round(used.reduce((a,b)=>a+b,0) / weeks.length);
+  const capped  = used.filter((u,i) => u >= limits[i]).length;
+  const minRem  = Math.min(...rems);
+
+  document.getElementById('st').innerHTML = `
+    <div class="sc">
+      <div class="sl">PTO Entries</div>
+      <div class="sv">${entries.length}</div>
+      <div class="ss">${weeks.length} weeks visible</div>
+    </div>
+    <div class="sc">
+      <div class="sl">Avg Remaining / Week</div>
+      <div class="sv ${avgRem<100?'r':avgRem<400?'o':'g'}">${avgRem.toLocaleString()}<span>h</span></div>
+      <div class="ss">pro-rated per week</div>
+    </div>
+    <div class="sc">
+      <div class="sl">Avg Hours Used / Week</div>
+      <div class="sv">${avgUsed.toLocaleString()}<span>h</span></div>
+      <div class="ss">booked so far</div>
+    </div>
+    <div class="sc">
+      <div class="sl">Weeks at Capacity</div>
+      <div class="sv ${capped>0?'r':'g'}">${capped}</div>
+      <div class="ss">tightest: ${minRem.toLocaleString()}h left</div>
+    </div>`;
+
+  let html = '';
+
+  weeks.forEach((days, wi) => {
+    const lim    = limits[wi];
+    const u      = used[wi];
+    const rem    = rems[wi];
+    const pct    = Math.min(100, u / lim * 100);
+    const remPct = Math.max(0, 100 - pct);   // bar drains
+    const c      = col(rem);
+    const greyed = u >= lim;
+    const wn     = iwk(days[1] || days[0]);
+    const wd     = workdaysInWeek(days);
+
+    const key    = weekKey(days);
+    const hasOv  = weekOverrides[key] !== undefined;
+
+    html += `<div class="wr">
+      <div class="wstripe" style="background:${c}"></div>
+      <div class="wl">
+        <div>
+          <input class="wlim-input" type="number" data-key="${key}"
+            value="${lim}" min="1" step="10"
+            title="Override weekly limit for this week"
+            style="${hasOv ? 'border-color:var(--orange);color:var(--orange)' : ''}">
+          <div style="font:9px/1 'DM Mono',monospace;color:var(--muted);opacity:.5;margin-top:3px">${wd}d · ${hasOv?'custom':'default'}</div>
+        </div>
+        <div>
+          <div class="wh" style="color:${c}">${rem.toLocaleString()}<span>h left</span></div>
+          <div class="ws2">${lbl(rem)}</div>
+          <div class="wbw"><div class="wbf" style="width:${remPct}%;background:${c}"></div></div>
+        </div>
+      </div>`;
+
+    days.forEach(d => {
+      const dStr   = ds(d);
+      const otherM = d.getMonth() !== mo;
+      const isToday= dStr === today;
+      const de     = eOn(dStr);
+      const dh     = de.reduce((a,e) => a+Number(e.h), 0);
+      const wknd   = isWknd(d);
+
+      let cls = 'dc';
+      if (greyed) cls += ' grey';
+      if (wknd)   cls += ' wknd';
+      if (otherM) cls += ' om';
+      if (isToday) cls += ' td';
+
+      html += `<div class="${cls}" data-date="${dStr}">
+        <div class="dn">${d.getDate()}</div>`;
+      if (dh > 0) html += `<div class="dh2">${dh}h booked</div>`;
+      de.forEach(e => {
+        const rc = RC[e.r] || RC.NORAM;
+        html += `<div class="chip" data-id="${e.id}"
+          style="background:${rc.bg};color:${rc.t};border-color:${rc.b}"
+          title="${e.n} · ${e.h}h/day · ${REGION_LABELS[e.r]||e.r}">
+          ${e.n.split(' ')[0]}</div>`;
+      });
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('cb').innerHTML = html;
+
+  // Bind per-week limit inputs
+  document.querySelectorAll('.wlim-input').forEach(input => {
+    // Prevent click propagating to day cell
+    input.addEventListener('click', ev => ev.stopPropagation());
+    input.addEventListener('change', ev => {
+      ev.stopPropagation();
+      const key = input.dataset.key;
+      const val = parseFloat(input.value);
+      if (!isNaN(val) && val > 0) {
+        weekOverrides[key] = val;
+      } else {
+        delete weekOverrides[key];
+      }
+      saveOv();
+      render();
+    });
+    // Double-click to reset to default
+    input.addEventListener('dblclick', ev => {
+      ev.stopPropagation();
+      const key = input.dataset.key;
+      delete weekOverrides[key];
+      saveOv();
+      render();
+    });
+  });
+
+  // Bind day clicks (capped weeks still clickable)
+  document.querySelectorAll('.dc:not(.wknd)').forEach(cell => {
+    cell.addEventListener('click', ev => {
+      if (ev.target.closest('.chip')) return;
+      openModal(cell.dataset.date);
+    });
+  });
+
+  // Bind chip clicks
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', ev => {
+      ev.stopPropagation();
+      showCtx(ev, null, chip.dataset.id);
+    });
+  });
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function openModal(date) {
+  pD = date; pI = null;
+  document.getElementById('fsd').value = date;
+  document.getElementById('fed').value = date;
+  document.getElementById('fn').value  = '';
+  document.getElementById('fhd').value = 8;
+  document.getElementById('frd').value = 'NORAM';
+
+  // Find the week this date belongs to
+  const weeks = getWeeks();
+  const week  = weeks.find(w => w.some(d => ds(d) === date)) || [];
+  const lim   = weekLimit(week);
+  const u     = wH(week);
+  const rem   = lim - u;
+  const wd    = workdaysInWeek(week);
+
+  const wb = document.getElementById('wb');
+  wb.className = 'warn';
+  if (rem <= 0) {
+    wb.style.display = 'block'; wb.classList.add('d');
+    wb.textContent = `LIMIT REACHED — 0h remaining (${lim.toLocaleString()}h limit · ${wd} workday${wd!==1?'s':''})`;
+  } else if (rem < 100) {
+    wb.style.display = 'block'; wb.classList.add('d');
+    wb.textContent = `Only ${rem.toLocaleString()}h remaining this week (limit: ${lim.toLocaleString()}h · ${wd}d)`;
+  } else if (rem < 400) {
+    wb.style.display = 'block';
+    wb.textContent = `${rem.toLocaleString()}h remaining — getting full (limit: ${lim.toLocaleString()}h · ${wd}d)`;
+  } else {
+    wb.style.display = 'none';
+  }
+
+  document.getElementById('ov').classList.add('open');
+  setTimeout(() => document.getElementById('fn').focus(), 80);
+}
+
+const closeModal = () => {
+  document.getElementById('ov').classList.remove('open');
+  pD = pI = null;
+};
+
+document.getElementById('mc').addEventListener('click', closeModal);
+document.getElementById('mca').addEventListener('click', closeModal);
+document.getElementById('ov').addEventListener('click', ev => {
+  if (ev.target === document.getElementById('ov')) closeModal();
+});
+
+document.getElementById('msv').addEventListener('click', () => {
+  const n = document.getElementById('fn').value.trim();
+  const s = document.getElementById('fsd').value;
+  const e = document.getElementById('fed').value;
+  const h = parseFloat(document.getElementById('fhd').value);
+  const r = document.getElementById('frd').value;
+  if (!n||!s||!e||isNaN(h)) { alert('Please complete all fields.'); return; }
+  if (e < s) { alert('End date must be on or after start date.'); return; }
+  entries.push({ id: Date.now().toString(), n, s, e, h, r });
+  save(); closeModal(); render();
+});
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+function showCtx(ev, date, chipId) {
+  ev.stopPropagation();
+  const menu = document.getElementById('ctx');
+  pD = date; pI = chipId;
+  document.getElementById('ca').style.display = date ? 'block' : 'none';
+  document.getElementById('cd').style.display = chipId ? 'block' : 'none';
+  menu.style.left = Math.min(ev.clientX, innerWidth-165)+'px';
+  menu.style.top  = Math.min(ev.clientY, innerHeight-80)+'px';
+  menu.classList.add('open');
+}
+
+document.getElementById('ca').addEventListener('click', () => {
+  document.getElementById('ctx').classList.remove('open');
+  if (pD) openModal(pD);
+});
+document.getElementById('cd').addEventListener('click', () => {
+  document.getElementById('ctx').classList.remove('open');
+  if (pI) { entries = entries.filter(e => e.id !== pI); save(); render(); }
+});
+document.addEventListener('click', () => document.getElementById('ctx').classList.remove('open'));
+
+// ─── NAV ──────────────────────────────────────────────────────────────────────
+document.getElementById('pb').addEventListener('click', () => { mo--; if(mo<0){mo=11;yr--;} render(); });
+document.getElementById('nb').addEventListener('click', () => { mo++; if(mo>11){mo=0;yr++;} render(); });
+document.getElementById('tb').addEventListener('click', () => { const n=new Date(); yr=n.getFullYear(); mo=n.getMonth(); render(); });
+
+// ─── SEED DEMO DATA ───────────────────────────────────────────────────────────
+function seed() {
+  const y = new Date().getFullYear();
+  const m = String(new Date().getMonth()+1).padStart(2,'0');
+  entries = [
+    {id:'1',n:'Sarah Johnson', s:`${y}-${m}-03`,e:`${y}-${m}-07`,h:8,r:'NORAM'},
+    {id:'2',n:'Jake Miller',   s:`${y}-${m}-03`,e:`${y}-${m}-05`,h:8,r:'NORAM'},
+    {id:'3',n:'Priya Sharma',  s:`${y}-${m}-10`,e:`${y}-${m}-14`,h:8,r:'INDIA'},
+    {id:'4',n:'Raj Patel',     s:`${y}-${m}-10`,e:`${y}-${m}-12`,h:8,r:'INDIA'},
+    {id:'5',n:'Marco Silva',   s:`${y}-${m}-17`,e:`${y}-${m}-21`,h:8,r:'LATAM'},
+    {id:'6',n:'Ana Gomez',     s:`${y}-${m}-17`,e:`${y}-${m}-19`,h:8,r:'LATAM'},
+    {id:'7',n:'Tom Bailey',    s:`${y}-${m}-17`,e:`${y}-${m}-21`,h:8,r:'NORAM'},
+    {id:'8',n:'Vikram Singh',  s:`${y}-${m}-17`,e:`${y}-${m}-21`,h:8,r:'INDIA'},
+    {id:'9',n:'Carlos Ruiz',   s:`${y}-${m}-17`,e:`${y}-${m}-21`,h:8,r:'LATAM'},
+  ];
+  save();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+const now = new Date();
+yr = now.getFullYear();
+mo = now.getMonth();
+
+// Restore saved global limit
+const savedGlobal = localStorage.getItem('pto_global_limit');
+if (savedGlobal) document.getElementById('globalLimit').value = savedGlobal;
+
+// Re-render live when global limit changes
+document.getElementById('globalLimit').addEventListener('input', () => {
+  localStorage.setItem('pto_global_limit', document.getElementById('globalLimit').value);
+  render();
+});
+
+if (!entries.length) seed();
+render();
+</script>
+</body>
+</html>
